@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Générateur de Menus - Semaine & Sport</title>
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --accent: #d84315;
+            --bg: #f4f6f8;
+            --card-bg: #ffffff;
+            --text: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .routine-info {
+            background-color: #e8f5e9;
+            border-left: 5px solid var(--primary);
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            border-radius: 4px;
+        }
+
+        .btn-generate {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 25px;
+        }
+
+        .btn-generate:hover {
+            background-color: #1b5e20;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .day-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .day-title {
+            font-weight: bold;
+            color: var(--primary);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .meal {
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .meal-title {
+            font-weight: bold;
+            color: #555;
+            font-size: 0.85em;
+            text-transform: uppercase;
+        }
+
+        .sauce {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .thursday-highlight {
+            background-color: #fff3e0;
+            border: 1px solid #ffe0b2;
+            padding: 5px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Mon Planificateur de Menus</h1>
+        <p>Objectif Raffermissement | Économique & Rapide</p>
+    </header>
+
+    <div class="routine-info">
+        <strong>⏰ Rappel Routine :</strong> Réveil à 4h30 (<em>Chocolat chaud, pain, beurre, confiture</em>) | Retour travail à 13h30.
+    </div>
+
+    <button class="btn-generate" onclick="generateMenu()">🔄 Générer un nouveau menu pour la semaine</button>
+
+    <div class="grid" id="menu-grid">
+        <!-- Les jours s'affichent ici via JavaScript -->
+    </div>
+</div>
+
+<script>
+    const dejeunerBase = [
+        { plat: "Pâtes complètes & thon en boîte", sauce: "Sauce tomate, ail & basilic" },
+        { plat: "Riz basmati & escalope de dinde", sauce: "Sauce curry légère" },
+        { plat: "Filet de colin surgelé & purée maison", sauce: "Sauce beurre-citron" },
+        { plat: "Steak haché 15% & semoule", sauce: "Sauce tomate & oignons" },
+        { plat: "Lentilles vertes & saucisse grillée", sauce: "Sauce moutarde à l'ancienne" },
+        { plat: "Poulet rôti & pommes de terre", sauce: "Jus de cuisson dégraissé" },
+        { plat: "Poêlée de légumes surgelés & riz", sauce: "Sauce crème & paprika" }
+    ];
+
+    const dinerBase = [
+        { plat: "Omelette aux champignons & salade", sauce: "Sauce vinaigrette au yaourt" },
+        { plat: "Poêlée de légumes & 2 œufs au plat", sauce: "Sauce soja & citron" },
+        { plat: "Blanc de dinde & haricots verts", sauce: "Sauce crème légère 15%" },
+        { plat: "Riz sauté aux légumes surgelés & œuf", sauce: "Sauce soja" },
+        { plat: "Salade composée (œufs durs, maïs, dinde)", sauce: "Sauce yaourt & ciboulette" },
+        { plat: "Soupe de légumes & tartine fromage râpé", sauce: "Sans sauce" },
+        { plat: "Crevettes sautées & courgettes", sauce: "Sauce ail & persil" }
+    ];
+
+    const jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+    function getRandomItem(array) {
+        return array[Math.floor(Math.random() * array.length)];
+    }
+
+    function generateMenu() {
+        const grid = document.getElementById("menu-grid");
+        grid.innerHTML = "";
+
+        // Copie des listes pour éviter les doublons trop fréquents
+        let dejList = [...dejeunerBase];
+        let dinList = [...dinerBase];
+
+        jours.forEach((jour) => {
+            const dejIndex = Math.floor(Math.random() * dejList.length);
+            const dej = dejList.splice(dejIndex, 1)[0] || getRandomItem(dejeunerBase);
+
+            const dinIndex = Math.floor(Math.random() * dinList.length);
+            const din = dinList.splice(dinIndex, 1)[0] || getRandomItem(dinerBase);
+
+            let dayHtml = `
+                <div class="day-card">
+                    <div class="day-title"><span>${jour}</span></div>
+            `;
+
+            if (jour === "Jeudi") {
+                dayHtml += `
+                    <div class="thursday-highlight">
+                        <strong>🌭 10h00 : Galette Saucisse !</strong>
+                    </div>
+                    <br>
+                `;
+            }
+
+            dayHtml += `
+                    <div class="meal">
+                        <div class="meal-title">Déjeuner (13h30)</div>
+                        ${dej.plat}<br>
+                        <span class="sauce">👉 ${dej.sauce}</span>
+                    </div>
+                    <div class="meal">
+                        <div class="meal-title">Dîner</div>
+                        ${din.plat}<br>
+                        <span class="sauce">👉 ${din.sauce}</span>
+                    </div>
+                </div>
+            `;
+
+            grid.innerHTML += dayHtml;
+        });
+    }
+
+    // Générer le menu au premier chargement
+    generateMenu();
+</script>
+
+</body>
+</html>
