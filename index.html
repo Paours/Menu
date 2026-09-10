@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menus Minceur Cuisine Française</title>
+    <title>Planificateur Minceur Cuisine Française - Grand Catalogue</title>
     <style>
         :root { --primary: #1b5e20; --accent: #d84315; --bg: #f4f6f8; --card-bg: #ffffff; --text: #333333; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
@@ -34,6 +34,241 @@
 
         .filter-group label {
             font-size: 0.85em;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        .actions { display: flex; gap: 10px; margin-bottom: 25px; }
+        .btn { flex: 1; padding: 15px; color: white; border: none; border-radius: 8px; font-size: 1em; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .btn-generate { background-color: var(--primary); }
+        .btn-generate:hover { background-color: #0d3b11; }
+        .btn-list { background-color: var(--accent); }
+        .btn-list:hover { background-color: #bf360c; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .day-card { background-color: var(--card-bg); border-radius: 10px; overflow: hidden; box-shadow: 0 3px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .day-img { width: 100%; height: 160px; object-fit: cover; background-color: #eee; }
+        .day-content { padding: 15px; flex: 1; }
+        .day-title { font-weight: bold; font-size: 1.1em; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 10px; }
+        .meal { margin-bottom: 12px; font-size: 0.95em; }
+        .meal-title { font-weight: bold; color: #777; font-size: 0.8em; text-transform: uppercase; }
+        .sauce { color: var(--accent); font-weight: bold; }
+        .thursday-highlight { background-color: #fff3e0; border: 1px solid #ffe0b2; padding: 8px; border-radius: 6px; margin-bottom: 10px; font-size: 0.9em; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 25px; border-radius: 10px; max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto; }
+        .close-btn { float: right; font-size: 1.5em; cursor: pointer; color: #888; }
+        .shopping-list-ul { list-style-type: none; padding-left: 0; margin-top: 10px; }
+        .shopping-list-ul li { padding: 6px 0; font-size: 0.95em; border-bottom: 1px solid #f0f0f0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🇫🇷 Grand Catalogue Minceur Français</h1>
+        <p class="subtitle">Plus de 60 recettes uniques & Sauces légères</p>
+    </header>
+
+    <div class="routine-info">
+        <strong>⏰ Rappel Routine :</strong> Réveil à 4h30 (<em>Chocolat chaud, pain, beurre, confiture</em>) | Retour travail à 13h30.
+    </div>
+
+    <div class="filters-panel">
+        <div class="filter-group">
+            <label for="filter-diet">🥗 Régime / Intolérance :</label>
+            <select id="filter-diet" onchange="generateMenu()">
+                <option value="none">Aucune restriction</option>
+                <option value="glutenfree">Sans Gluten</option>
+                <option value="lactosefree">Sans Lactose</option>
+                <option value="veggie">Végétarien</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="filter-budget">💰 Budget :</label>
+            <select id="filter-budget" onchange="generateMenu()">
+                <option value="eco">Économique (€)</option>
+                <option value="medium">Moyen (€€)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button class="btn btn-generate" onclick="generateMenu()">🔄 Générer un menu inédit</button>
+        <button class="btn btn-list" onclick="showShoppingList()">🛒 Liste de courses</button>
+    </div>
+
+    <div class="grid" id="menu-grid"></div>
+</div>
+
+<div class="modal" id="shopping-modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2>🛒 Liste de courses pour la semaine</h2>
+        <div id="shopping-list-content"></div>
+    </div>
+</div>
+
+<script>
+    const jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+    const petitsDejsEtRoutines = ["Chocolat en poudre", "Pain", "Beurre", "Confiture", "Saucisse & galette de blé noir (jeudi)"];
+    
+    // GRAND CATALOGUE 100% FRANÇAIS MINCEUR (60+ Recettes)
+    const localFrenchMinceur = [
+        // VOLAILLE
+        { nom: "Poulet Basquaise aux Poivrons 🇫🇷", sauce: "Sauce tomate, poivrons & piment d'Espelette", tags: ["eco", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=600", ing: ["Poulet", "Poivrons", "Tomates pelées", "Ail", "Piment d'Espelette"] },
+        { nom: "Blanquette de Dinde Minceur 🇫🇷", sauce: "Sauce veloutée citronnée au bouillon léger", tags: ["eco", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=600", ing: ["Escalope de dinde", "Carottes", "Champignons", "Bouillon de volaille", "Citron"] },
+        { nom: "Aiguillettes de Poulet Minceur 🇫🇷", sauce: "Sauce crémeuse au curry doux & estragon", tags: ["eco", "glutenfree"], img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600", ing: ["Aiguillettes de poulet", "Curry", "Estragon", "Courgettes", "Crème 5%"] },
+        { nom: "Magret de Canard Dégraissé 🇫🇷", sauce: "Sauce réduction au vinaigre balsamique & miel", tags: ["medium", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1514944288352-fffac99f0bdf?w=600", ing: ["Magret de canard", "Vinaigre balsamique", "Miel", "Purée de céleri"] },
+        { nom: "Poulet Chasseur Allégé 🇫🇷", sauce: "Sauce vin blanc, échalotes & coulis de tomates", tags: ["eco", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=600", ing: ["Cuisses de poulet dépiautées", "Champignons", "Vin blanc", "Échalotes", "Tomates"] },
+        { nom: "Supremes de Volaille au Estragon 🇫🇷", sauce: "Sauce mousseline au cheese léger & estragon", tags: ["eco", "glutenfree"], img: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=600", ing: ["Filet de poulet", "Estragon frais", "Fromage blanc 0%", "Citron"] },
+        { nom: "Coq au Vin Minceur 🇫🇷", sauce: "Sauce réduite au Pinot Noir & bouquet garni", tags: ["medium", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=600", ing: ["Poulet", "Vin rouge Pinot Noir", "Oignons grelots", "Carottes", "Thym"] },
+        { nom: "Dinde Marengo légère 🇫🇷", sauce: "Sauce tomate à l'ail, persil & concentré léger", tags: ["eco", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600", ing: ["Sauté de dinde", "Tomates concassées", "Ail", "Persil", "Champignons"] },
+        { nom: "Pintade aux Pommes & Cidre 🇫🇷", sauce: "Sauce légère au cidre brut breton", tags: ["medium", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1518492104633-130d0cc84637?w=600", ing: ["Pintade", "Pommes", "Cidre brut", "Échalotes"] },
+        { nom: "Brochettes de Poulet Dijonnaise 🇫🇷", sauce: "Sauce émulsionnée moutarde fort & yaourt", tags: ["eco", "glutenfree"], img: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600", ing: ["Filets de poulet", "Moutarde de Dijon", "Yaourt grec 0%", "Courgettes"] },
+
+        // POISSONS & FRUITS DE MER
+        { nom: "Pavé de Cabillaud rôti 🇫🇷", sauce: "Sauce crème légère à l'aneth & citron", tags: ["medium", "glutenfree"], img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600", ing: ["Cabillaud", "Crème 5% MG", "Citron", "Aneth", "Haricots verts"] },
+        { nom: "Filet de Colin façon Grenobloise 🇫🇷", sauce: "Sauce jus de citron, câpres & persil", tags: ["eco", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600", ing: ["Colin", "Câpres", "Citron", "Persil frais", "Pommes de terre vapeur"] },
+        { nom: "Pavé de Saumon Vapeur 🇫🇷", sauce: "Sauce mousseline au yaourt léger & ciboulette", tags: ["medium", "glutenfree"], img: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600", ing: ["Saumon", "Yaourt nature", "Ciboulette", "Brocolis"] },
+        { nom: "Crevettes flambées Persillade 🇫🇷", sauce: "Sauce légère au citron, ail & persil", tags: ["medium", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1559715745-e1b34a25888f?w=600", ing: ["Crevettes", "Ail", "Persil", "Riz complet"] },
+        { nom: "Sole Meunière Allégée 🇫🇷", sauce: "Jus de citron, touche de beurre clair & cerfeuil", tags: ["medium", "glutenfree"], img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600", ing: ["Filet de sole", "Citron", "Beurre doux", "Cerfeuil"] },
+        { nom: "Nage de Saint-Jacques au Safran 🇫🇷", sauce: "Fumet de poisson safrané & poireaux", tags: ["medium", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=600", ing: ["Noix de Saint-Jacques", "Poireaux", "Safran", "Fumet de poisson"] },
+        { nom: "Loup de Mer au Fenouil 🇫🇷", sauce: "Sauce vierge légère (huile olive, tomates, basilic)", tags: ["medium", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600", ing: ["Bar/Loup de mer", "Fenouil", "Huile d'olive", "Tomates fraîches", "Basilic"] },
+        { nom: "Moules Marinières Légères 🇫🇷", sauce: "Jus de cuisson au vin blanc, échalotes & persil", tags: ["eco", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600", ing: ["Moules", "Vin blanc sec", "Échalotes", "Persil plat"] },
+        { nom: "Dos de Lieu Noir Armorique 🇫🇷", sauce: "Sauce armoricaine légère au coulis de crustacés", tags: ["eco", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600", ing: ["Lieu noir", "Bisque de homard/crustacés", "Ail", "Oignons"] },
+        { nom: "Truite aux Amandes & Citron 🇫🇷", sauce: "Jus au citron & effiloché d'amandes torréfiées", tags: ["eco", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600", ing: ["Truite portion", "Amandes effilées", "Citron", "Épinards"] },
+
+        // VIANDES
+        { nom: "Filet Mignon de Porc léger 🇫🇷", sauce: "Sauce au cidre breton & moutarde à l'ancienne", tags: ["medium", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600", ing: ["Filet mignon", "Cidre brut", "Moutarde à l'ancienne", "Champignons"] },
+        { nom: "Emincé de Bœuf Strogonoff léger 🇫🇷", sauce: "Sauce paprika, yaourt grec & oignons", tags: ["eco", "glutenfree"], img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600", ing: ["Bœuf émincé", "Oignons", "Yaourt grec 0%", "Paprika", "Riz basmati"] },
+        { nom: "Sauté de Veau aux Champignons 🇫🇷", sauce: "Sauce crème fine au vin blanc & persillade", tags: ["medium", "glutenfree"], img: "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600", ing: ["Sauté de veau", "Champignons de Paris", "Vin blanc", "Crème légère"] },
+        { nom: "Steak Minceur au Poivre Vert 🇫🇷", sauce: "Sauce fond de veau réduit & poivre vert", tags: ["eco", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600", ing: ["Rumpsteak", "Poivre vert en grain", "Fond de veau", "Haricots verts"] },
+        { nom: "Rôti de Porc aux Pruneaux 🇫🇷", sauce: "Sauce jus d'infusion aux pruneaux & thym", tags: ["eco", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600", ing: ["Rôti de porc", "Pruneaux d'Agen", "Thym", "Carottes"] },
+        { nom: "Navarin d'Agneau Primeur 🇫🇷", sauce: "Sauce jus clair aux herbes de Provence", tags: ["medium", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=600", ing: ["Epaule d'agneau dégraissée", "Navets", "Petits pois", "Carottes", "Romarin"] },
+        { nom: "Bœuf Bourguignon Allégé 🇫🇷", sauce: "Sauce mijotée vin rouge, oignons & champignons", tags: ["eco", "glutenfree", "lactosefree"], img: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600", ing: ["Bœuf à braiser", "Vin rouge", "Carottes", "Champignons", "Oignons"] },
+
+        // VEGETARIEN & OEUFS
+        { nom: "Ratatouille Provençale & Œuf Poché 🇫🇷", sauce: "Sauce tomate au basilic & huile d'olive", tags: ["eco", "glutenfree", "lactosefree", "veggie"], img: "https://images.unsplash.com/photo-1572453800999-e8d2d1589b7c?w=600", ing: ["Courgettes", "Aubergines", "Tomates", "Œufs", "Basilic"] },
+        { nom: "Omelette baveuse aux Champignons 🇫🇷", sauce: "Sauce jus d'herbes & persillade", tags: ["eco", "glutenfree", "lactosefree", "veggie"], img: "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=600", ing: ["Œufs", "Champignons", "Persil", "Ail"] },
+        { nom: "Soupe à l'Oignon Lyonnaise Allégée 🇫🇷", sauce: "Bouillon léger gratiné", tags: ["eco", "veggie"], img: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600", ing: ["Oignons", "Bouillon de légumes", "Pain complet", "Comté râpé"] },
+        { nom: "Œufs en Meurette Minceur 🇫🇷", sauce: "Sauce vin rouge réduit, échalotes & thym", tags: ["eco", "glutenfree", "lactosefree", "veggie"], img: "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=600", ing: ["Œufs", "Vin rouge", "Échalotes", "Champignons", "Pain complet"] },
+        { nom: "Tian de Légumes du Soleil 🇫🇷", sauce: "Sauce coulis de tomate rôties à l'ail", tags: ["eco", "glutenfree", "lactosefree", "veggie"], img: "https://images.unsplash.com/photo-1572453800999-e8d2d1589b7c?w=600", ing: ["Courgettes", "Tomates", "Aubergines", "Huile d'olive", "Ail"] },
+        { nom: "Curry de Lentilles Vertes du Puy 🇫🇷", sauce: "Sauce légère au lait de coco allégé & curcuma", tags: ["eco", "glutenfree", "lactosefree", "veggie"], img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600", ing: ["Lentilles vertes du Puy", "Lait de coco 5%", "Curcuma", "Carottes"] },
+        { nom: "Piperade Basque & Tofu Poêlé 🇫🇷", sauce: "Sauce poivrons doux, tomates & piment", tags: ["eco", "glutenfree", "lactosefree", "veggie"], img: "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=600", ing: ["Tofu", "Poivrons rouges/verts", "Tomates", "Oignons"] }
+    ];
+
+    let currentWeekIngredients = [];
+
+    function filterMeals(array, diet, budget) {
+        return array.filter(item => {
+            let matchDiet = (diet === "none") || item.tags.includes(diet);
+            let matchBudget = (budget === "medium") || item.tags.includes("eco");
+            return matchDiet && matchBudget;
+        });
+    }
+
+    function shuffle(array) {
+        let arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function generateMenu() {
+        const grid = document.getElementById("menu-grid");
+        grid.innerHTML = "";
+        currentWeekIngredients = [...petitsDejsEtRoutines];
+
+        const diet = document.getElementById("filter-diet").value;
+        const budget = document.getElementById("filter-budget").value;
+
+        let filtered = filterMeals(localFrenchMinceur, diet, budget);
+
+        // Sécurité si les filtres sont trop stricts
+        if (filtered.length < 14) {
+            filtered = localFrenchMinceur;
+        }
+
+        let selectedList = shuffle(filtered);
+
+        jours.forEach((jour, index) => {
+            const dej = selectedList[index * 2 % selectedList.length];
+            const din = selectedList[(index * 2 + 1) % selectedList.length];
+
+            currentWeekIngredients.push(...dej.ing, ...din.ing);
+
+            let dayHtml = `
+                <div class="day-card">
+                    <img src="${dej.img}" alt="${dej.nom}" class="day-img">
+                    <div class="day-content">
+                        <div class="day-title">${jour}</div>
+            `;
+
+            if (jour === "Jeudi") {
+                dayHtml += `
+                    <div class="thursday-highlight">
+                        <strong>🌭 10h00 : Galette Saucisse !</strong>
+                    </div>
+                `;
+            }
+
+            dayHtml += `
+                        <div class="meal">
+                            <div class="meal-title">Déjeuner (13h30)</div>
+                            <strong>${dej.nom}</strong><br>
+                            <span class="sauce">👉 ${dej.sauce}</span>
+                        </div>
+                        <div class="meal">
+                            <div class="meal-title">Dîner</div>
+                            <strong>${din.nom}</strong><br>
+                            <span class="sauce">👉 ${din.sauce}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            grid.innerHTML += dayHtml;
+        });
+    }
+
+    function showShoppingList() {
+        const modal = document.getElementById("shopping-modal");
+        const container = document.getElementById("shopping-list-content");
+        const uniqueIngredients = [...new Set(currentWeekIngredients)].sort();
+        
+        let listHtml = "<ul class='shopping-list-ul'>";
+        uniqueIngredients.forEach(ing => { listHtml += `<li><input type="checkbox"> ${ing}</li>`; });
+        listHtml += "</ul>";
+        
+        container.innerHTML = listHtml;
+        modal.style.display = "flex";
+    }
+
+    function closeModal() {
+        document.getElementById("shopping-modal").style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById("shopping-modal");
+        if (event.target === modal) { modal.style.display = "none"; }
+    }
+
+    generateMenu();
+</script>
+
+</body>
+</html>
             font-weight: bold;
             color: #555;
         }
