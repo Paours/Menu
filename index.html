@@ -3,37 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Générateur de Menus, Courses & Filtres</title>
+    <title>Mon Planificateur de Menus Infini</title>
     <style>
-        :root {
-            --primary: #2e7d32;
-            --accent: #d84315;
-            --bg: #f4f6f8;
-            --card-bg: #ffffff;
-            --text: #333333;
+        :root { --primary: #2e7d32; --accent: #d84315; --bg: #f4f6f8; --card-bg: #ffffff; --text: #333333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { color: var(--primary); margin-bottom: 5px; }
+        .routine-info { background-color: #e8f5e9; border-left: 5px solid var(--primary); padding: 10px 15px; margin-bottom: 20px; font-size: 0.9em; border-radius: 4px; }
+        .actions { display: flex; gap: 10px; margin-bottom: 25px; }
+        .btn { flex: 1; padding: 15px; color: white; border: none; border-radius: 8px; font-size: 1em; font-weight: bold; cursor: pointer; }
+        .btn-generate { background-color: var(--primary); }
+        .btn-list { background-color: var(--accent); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .day-card { background-color: var(--card-bg); border-radius: 10px; overflow: hidden; box-shadow: 0 3px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .day-img { width: 100%; height: 160px; object-fit: cover; background-color: #eee; }
+        .day-content { padding: 15px; flex: 1; }
+        .day-title { font-weight: bold; font-size: 1.1em; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 10px; }
+        .meal { margin-bottom: 12px; font-size: 0.95em; }
+        .meal-title { font-weight: bold; color: #777; font-size: 0.8em; text-transform: uppercase; }
+        .thursday-highlight { background-color: #fff3e0; border: 1px solid #ffe0b2; padding: 8px; border-radius: 6px; margin-bottom: 10px; font-size: 0.9em; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 25px; border-radius: 10px; max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto; }
+        .close-btn { float: right; font-size: 1.5em; cursor: pointer; color: #888; }
+        .shopping-list-ul { list-style-type: none; padding-left: 0; margin-top: 10px; }
+        .shopping-list-ul li { padding: 6px 0; font-size: 0.95em; border-bottom: 1px solid #f0f0f0; }
+        .loading { text-align: center; font-size: 1.2em; padding: 40px; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Mon Planificateur de Menus Infini</h1>
+        <p>Recettes du Monde & Photos en direct</p>
+    </header>
+
+    <div class="routine-info">
+        <strong>⏰ Rappel Routine :</strong> Réveil à 4h30 (<em>Chocolat chaud, pain, beurre, confiture</em>) | Retour travail à 13h30.
+    </div>
+
+    <div class="actions">
+        <button class="btn btn-generate" onclick="generateMenu()">🔄 14 Nouvelles Recettes</button>
+        <button class="btn btn-list" onclick="showShoppingList()">🛒 Liste de courses</button>
+    </div>
+
+    <div id="loading-state" class="loading" style="display: none;">⏳ Recherche de recettes du monde...</div>
+    <div class="grid" id="menu-grid"></div>
+</div>
+
+<div class="modal" id="shopping-modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2>🛒 Liste de courses pour la semaine</h2>
+        <div id="shopping-list-content"></div>
+    </div>
+</div>
+
+<script>
+    const jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+    const petitsDejsEtRoutines = ["Chocolat en poudre", "Pain", "Beurre", "Confiture", "Saucisse & galette de blé noir (jeudi)"];
+    let currentWeekIngredients = [];
+
+    async function getRandomMeal() {
+        try {
+            const res = await fetch("https://www.themealdb.com/api/json/v1/1/random.php");
+            const data = await res.json();
+            const meal = data.meals[0];
+            let ingredients = [];
+            for (let i = 1; i <= 20; i++) {
+                let ing = meal[`strIngredient${i}`];
+                if (ing && ing.trim() !== "") { ingredients.push(ing.trim()); }
+            }
+            return { nom: meal.strMeal, origine: meal.strArea, img: meal.strMealThumb, ingredients: ingredients };
+        } catch (e) { return null; }
+    }
+
+    async function generateMenu() {
+        const grid = document.getElementById("menu-grid");
+        const loader = document.getElementById("loading-state");
+        grid.innerHTML = "";
+        loader.style.display = "block";
+        currentWeekIngredients = [...petitsDejsEtRoutines];
+
+        let mealsFetched = [];
+        let fetchedIds = new Set();
+
+        while (mealsFetched.length < 14) {
+            let meal = await getRandomMeal();
+            if (meal && !fetchedIds.has(meal.nom)) {
+                fetchedIds.add(meal.nom);
+                mealsFetched.push(meal);
+            }
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-        }
+        loader.style.display = "none";
 
-        .container {
-            max-width: 950px;
-            margin: 0 auto;
-        }
+        jours.forEach((jour, index) => {
+            const dej = mealsFetched[index * 2];
+            const din = mealsFetched[index * 2 + 1];
+            currentWeekIngredients.push(...dej.ingredients, ...din.ingredients);
 
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+            let dayHtml = `
+                <div class="day-card">
+                    <img src="${dej.img}" alt="${dej.nom}" class="day-img">
+                    <div class="day-content">
+                        <div class="day-title">${jour}</div>
+            `;
+            if (jour === "Jeudi") {
+                dayHtml += `<div class="thursday-highlight"><strong>🌭 10h00 : Galette Saucisse !</strong></div>`;
+            }
+            dayHtml += `
+                        <div class="meal">
+                            <div class="meal-title">Déjeuner (13h30)</div>
+                            <strong>${dej.nom}</strong> (${dej.origine})
+                        </div>
+                        <div class="meal">
+                            <div class="meal-title">Dîner</div>
+                            <strong>${din.nom}</strong> (${din.origine})
+                        </div>
+                    </div>
+                </div>
+            `;
+            grid.innerHTML += dayHtml;
+        });
+    }
 
-        h1 {
-            color: var(--primary);
-            margin-bottom: 5px;
+    function showShoppingList() {
+        const modal = document.getElementById("shopping-modal");
+        const container = document.getElementById("shopping-list-content");
+        const uniqueIngredients = [...new Set(currentWeekIngredients)].sort();
+        let listHtml = "<ul class='shopping-list-ul'>";
+        uniqueIngredients.forEach(ing => { listHtml += `<li><input type="checkbox"> ${ing}</li>`; });
+        listHtml += "</ul>";
+        container.innerHTML = listHtml;
+        modal.style.display = "flex";
+    }
+
+    function closeModal() { document.getElementById("shopping-modal").style.display = "none"; }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById("shopping-modal");
+        if (event.target === modal) { modal.style.display = "none"; }
+    }
+
+    generateMenu();
+</script>
+
+</body>
+</html>
         }
 
         .routine-info {
