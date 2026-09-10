@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Générateur de Menus & Courses</title>
+    <title>Mon Générateur de Menus, Courses & Filtres</title>
     <style>
         :root {
             --primary: #2e7d32;
@@ -34,6 +34,370 @@
         h1 {
             color: var(--primary);
             margin-bottom: 5px;
+        }
+
+        .routine-info {
+            background-color: #e8f5e9;
+            border-left: 5px solid var(--primary);
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            border-radius: 4px;
+        }
+
+        /* Panneau des filtres */
+        .filters-panel {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .filter-group select, .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-generate { background-color: var(--primary); }
+        .btn-generate:hover { background-color: #1b5e20; }
+        .btn-list { background-color: var(--accent); }
+        .btn-list:hover { background-color: #bf360c; }
+        .btn-copy { background-color: #0288d1; margin-top: 15px; width: 100%; }
+        .btn-copy:hover { background-color: #01579b; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .day-card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .day-img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+        }
+
+        .day-content {
+            padding: 15px;
+            flex: 1;
+        }
+
+        .day-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: var(--primary);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        .meal {
+            margin-bottom: 12px;
+            font-size: 0.95em;
+        }
+
+        .meal-title {
+            font-weight: bold;
+            color: #777;
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+
+        .sauce {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .thursday-highlight {
+            background-color: #fff3e0;
+            border: 1px solid #ffe0b2;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .close-btn {
+            float: right;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #888;
+        }
+
+        .shopping-list-ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin-top: 10px;
+        }
+
+        .shopping-list-ul li {
+            padding: 6px 0;
+            font-size: 0.95em;
+            border-bottom: 1px solid #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Mon Planificateur de Menus</h1>
+        <p>Raffermissement | Personnalisé avec Photos</p>
+    </header>
+
+    <div class="routine-info">
+        <strong>⏰ Rappel Routine :</strong> Réveil à 4h30 (<em>Chocolat chaud, pain, beurre, confiture</em>) | Retour travail à 13h30.
+    </div>
+
+    <!-- Panneau de filtres -->
+    <div class="filters-panel">
+        <div class="filter-group">
+            <label for="filter-persons">👥 Personnes :</label>
+            <input type="number" id="filter-persons" value="1" min="1" max="10" onchange="generateMenu()">
+        </div>
+
+        <div class="filter-group">
+            <label for="filter-diet">🥗 Régime / Intolérance :</label>
+            <select id="filter-diet" onchange="generateMenu()">
+                <option value="none">Aucune restriction</option>
+                <option value="glutenfree">Sans Gluten</option>
+                <option value="lactosefree">Sans Lactose</option>
+                <option value="veggie">Végétarien</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="filter-budget">💰 Budget :</label>
+            <select id="filter-budget" onchange="generateMenu()">
+                <option value="eco">Économique (€)</option>
+                <option value="medium">Moyen (€€)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button class="btn btn-generate" onclick="generateMenu()">🔄 Nouveau menu</button>
+        <button class="btn btn-list" onclick="showShoppingList()">🛒 Liste de courses</button>
+    </div>
+
+    <div class="grid" id="menu-grid"></div>
+</div>
+
+<div class="modal" id="shopping-modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2>🛒 Liste de courses (<span id="modal-people-count">1</span> pers.)</h2>
+        <div id="shopping-list-content"></div>
+        <button class="btn btn-copy" onclick="copyToClipboard()">📋 Copier le texte pour Courses U</button>
+    </div>
+</div>
+
+<script>
+    // Liste de repas avec tags de filtrage
+    const dejeunerBase = [
+        { plat: "Pâtes complètes & thon en boîte", sauce: "Sauce tomate & basilic", tags: ["eco"], ing: ["Pâtes complètes", "Thon en boîte", "Purée de tomate"], img: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=500&auto=format&fit=crop" },
+        { plat: "Riz basmati & escalope de dinde", sauce: "Sauce curry (sans lactose)", tags: ["eco", "glutenfree", "lactosefree"], ing: ["Riz basmati", "Escalopes de dinde", "Lait de coco", "Poudre de curry"], img: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop" },
+        { plat: "Filet de colin & purée maison", sauce: "Sauce citron & huile d'olive", tags: ["eco", "glutenfree", "lactosefree"], ing: ["Filets de colin", "Pommes de terre", "Huile d'olive", "Citron"], img: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=500&auto=format&fit=crop" },
+        { plat: "Steak haché 15% & quinoa", sauce: "Sauce tomate & oignons", tags: ["medium", "glutenfree", "lactosefree"], ing: ["Steaks hachés", "Quinoa", "Purée de tomate", "Oignons"], img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop" },
+        { plat: "Lentilles vertes & saucisse grillée", sauce: "Sauce moutarde", tags: ["eco", "glutenfree", "lactosefree"], ing: ["Lentilles vertes", "Saucisses", "Moutarde"], img: "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=500&auto=format&fit=crop" },
+        { plat: "Poulet rôti & pommes de terre", sauce: "Jus de cuisson maison", tags: ["eco", "glutenfree", "lactosefree"], ing: ["Poulet", "Pommes de terre"], img: "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=500&auto=format&fit=crop" },
+        { plat: "Poêlée de légumes & riz basmati", sauce: "Sauce soja (sans gluten)", tags: ["eco", "glutenfree", "lactosefree", "veggie"], ing: ["Riz basmati", "Légumes surgelés", "Sauce soja tamari"], img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&auto=format&fit=crop" }
+    ];
+
+    const dinerBase = [
+        { plat: "Omelette aux champignons & salade", sauce: "Vinaigrette maison", tags: ["eco", "glutenfree", "lactosefree", "veggie"], ing: ["Œufs", "Champignons", "Salade verte"], img: "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=500&auto=format&fit=crop" },
+        { plat: "Poêlée de légumes & 2 œufs au plat", sauce: "Sauce soja & citron", tags: ["eco", "glutenfree", "lactosefree", "veggie"], ing: ["Légumes surgelés", "Œufs", "Sauce soja", "Citron"], img: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop" },
+        { plat: "Blanc de dinde & haricots verts", sauce: "Sauce filet d'huile d'olive", tags: ["eco", "glutenfree", "lactosefree"], ing: ["Blancs de dinde", "Haricots verts", "Huile d'olive"], img: "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=500&auto=format&fit=crop" },
+        { plat: "Salade composée (œufs, maïs, dinde)", sauce: "Sauce yaourt (ou sans lactose)", tags: ["eco", "glutenfree"], ing: ["Œufs", "Maïs", "Dinde", "Yaourt"], img: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=500&auto=format&fit=crop" },
+        { plat: "Soupe de légumes & tartine complète", sauce: "Sans sauce", tags: ["eco", "veggie"], ing: ["Soupe de légumes", "Pain complet"], img: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=500&auto=format&fit=crop" },
+        { plat: "Crevettes sautées & courgettes", sauce: "Sauce ail & persil", tags: ["medium", "glutenfree", "lactosefree"], ing: ["Crevettes", "Courgettes", "Ail", "Persil"], img: "https://images.unsplash.com/photo-1559715745-e1b34a25888f?w=500&auto=format&fit=crop" }
+    ];
+
+    const petitsDejsEtRoutines = ["Chocolat en poudre", "Pain", "Beurre", "Confiture", "Saucisse & galette de blé noir (jeudi)"];
+    const jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+    let currentWeekIngredients = [];
+
+    function getRandomItem(array) {
+        return array[Math.floor(Math.random() * array.length)];
+    }
+
+    function filterMeals(array, diet, budget) {
+        return array.filter(item => {
+            let matchDiet = (diet === "none") || item.tags.includes(diet);
+            let matchBudget = (budget === "medium") || item.tags.includes("eco");
+            return matchDiet && matchBudget;
+        });
+    }
+
+    function generateMenu() {
+        const grid = document.getElementById("menu-grid");
+        grid.innerHTML = "";
+        currentWeekIngredients = [...petitsDejsEtRoutines];
+
+        const diet = document.getElementById("filter-diet").value;
+        const budget = document.getElementById("filter-budget").value;
+
+        let filteredDej = filterMeals(dejeunerBase, diet, budget);
+        let filteredDin = filterMeals(dinerBase, diet, budget);
+
+        // Secours si les filtres sont trop stricts
+        if (filteredDej.length === 0) filteredDej = dejeunerBase;
+        if (filteredDin.length === 0) filteredDin = dinerBase;
+
+        jours.forEach((jour) => {
+            const dej = getRandomItem(filteredDej);
+            const din = getRandomItem(filteredDin);
+
+            currentWeekIngredients.push(...dej.ing, ...din.ing);
+
+            let dayHtml = `
+                <div class="day-card">
+                    <img src="${dej.img}" alt="${dej.plat}" class="day-img">
+                    <div class="day-content">
+                        <div class="day-title">${jour}</div>
+            `;
+
+            if (jour === "Jeudi") {
+                dayHtml += `
+                    <div class="thursday-highlight">
+                        <strong>🌭 10h00 : Galette Saucisse !</strong>
+                    </div>
+                `;
+            }
+
+            dayHtml += `
+                        <div class="meal">
+                            <div class="meal-title">Déjeuner (13h30)</div>
+                            ${dej.plat}<br>
+                            <span class="sauce">👉 ${dej.sauce}</span>
+                        </div>
+                        <div class="meal">
+                            <div class="meal-title">Dîner</div>
+                            ${din.plat}<br>
+                            <span class="sauce">👉 ${din.sauce}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            grid.innerHTML += dayHtml;
+        });
+    }
+
+    function showShoppingList() {
+        const modal = document.getElementById("shopping-modal");
+        const container = document.getElementById("shopping-list-content");
+        const persons = document.getElementById("filter-persons").value;
+        
+        document.getElementById("modal-people-count").innerText = persons;
+
+        const uniqueIngredients = [...new Set(currentWeekIngredients)].sort();
+
+        let listHtml = "<ul class='shopping-list-ul'>";
+        uniqueIngredients.forEach(ing => {
+            listHtml += `<li><input type="checkbox"> ${ing} (x${persons})</li>`;
+        });
+        listHtml += "</ul>";
+
+        container.innerHTML = listHtml;
+        modal.style.display = "flex";
+    }
+
+    function closeModal() {
+        document.getElementById("shopping-modal").style.display = "none";
+    }
+
+    function copyToClipboard() {
+        const persons = document.getElementById("filter-persons").value;
+        const uniqueIngredients = [...new Set(currentWeekIngredients)].sort();
+        const textToCopy = `Liste de courses (${persons} pers.) :\n- ` + uniqueIngredients.join("\n- ");
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert("Liste copiée ! Tu peux la coller dans tes notes ou dans l'application Courses U.");
+        });
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById("shopping-modal");
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    generateMenu();
+</script>
+
+</body>
+</html>
         }
 
         .routine-info {
